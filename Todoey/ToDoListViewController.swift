@@ -11,12 +11,18 @@ import UIKit
 class ToDoListViewController: UITableViewController {
     
     var itemArray = ["Learn on Udemy", "Solving conflict", "Go to VTC"]
+    let userDefault = UserDefaults.standard
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        if let items = userDefault.array(forKey: "ToDoListArray") as? [String] {
+            itemArray = items
+        }
+        
         self.tableView.dataSource = self
         self.tableView.delegate = self
+    
     }
     
     //MARK: - TableView Datasource methods
@@ -73,6 +79,7 @@ class ToDoListViewController: UITableViewController {
                 
                 let text = textField.text
                 self.itemArray.append(text!)
+                self.userDefault.set(self.itemArray, forKey: "ToDoListArray")
                 self.tableView.reloadData()
             }
         }
