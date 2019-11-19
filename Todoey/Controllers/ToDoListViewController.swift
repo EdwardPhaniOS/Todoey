@@ -10,13 +10,24 @@ import UIKit
 
 class ToDoListViewController: UITableViewController {
     
-    var itemArray = ["Learn on Udemy", "Solving conflict", "Go to VTC"]
+    var itemArray = [Item]()
+    
+    //userDefault: file .plist in folder Data of a physical device or virtual device
     let userDefault = UserDefaults.standard
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        if let items = userDefault.array(forKey: "ToDoListArray") as? [String] {
+        let newItem = Item(title: "Learn on Udemy", done: false)
+        itemArray.append(newItem)
+        
+        let newItem2 = Item(title: "Find Mike", done: false)
+        itemArray.append(newItem2)
+        
+        let newItem3 = Item(title: "Go to Library", done: false)
+        itemArray.append(newItem3)
+        
+        if let items = userDefault.array(forKey: "ToDoListArray") as? [Item] {
             itemArray = items
         }
         
@@ -39,23 +50,20 @@ class ToDoListViewController: UITableViewController {
         
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoListCell", for: indexPath)
         
-        cell.textLabel?.text = itemArray[indexPath.row]
+        let item = itemArray[indexPath.row]
         
+        cell.textLabel?.text = item.title
+        cell.accessoryType = item.done == true ? .checkmark : .none
+    
         return cell
     }
     
     //MARK: - TableView Delegate methods
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        
-        let selectedCell = tableView.cellForRow(at: indexPath)
-        
-        if selectedCell?.accessoryType == .checkmark {
-            selectedCell?.accessoryType = .none
-        } else {
-            selectedCell?.accessoryType = .checkmark
-        }
-        
+        itemArray[indexPath.row].done = !itemArray[indexPath.row].done
+
+        tableView.reloadData()
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
@@ -77,8 +85,10 @@ class ToDoListViewController: UITableViewController {
             
             if textField.text != "" {
                 
-                let text = textField.text
-                self.itemArray.append(text!)
+                let newItem = Item(title: textField.text!, done: false)
+    
+                self.itemArray.append(newItem)
+    
                 self.userDefault.set(self.itemArray, forKey: "ToDoListArray")
                 self.tableView.reloadData()
             }
