@@ -11,7 +11,7 @@ import RealmSwift
 
 class ItemCategory: Object {
     @objc dynamic var name: String = ""
-    
+    @objc dynamic var hexColor: String = ""
     //Declare Forward Relationship
     //1 ItemCategory has many items
     let items = List<Item>()
