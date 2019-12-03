@@ -8,8 +8,11 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
 class ToDoListViewController: SwipeTableViewController {
+    
+    @IBOutlet weak var searchBar: UISearchBar!
     
     let realm = try! Realm()
     
@@ -25,9 +28,71 @@ class ToDoListViewController: SwipeTableViewController {
         }
     }
     
+    //MARK: - View Life Cycle
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         self.tableView.rowHeight = 80
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        guard let hexCode = selectedCategory?.hexColor
+            else { print("Error with selected Category hex code"); return }
+        
+        setupNavigationBar(withHexCode: hexCode)
+        setColorForSearchBar(withHexCode: hexCode)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        
+        setupNavigationBar()
+    }
+    
+    //MARK: - Setup Navigation Bar
+    
+    func setupNavigationBar(withHexCode hexCode: String = "1D9BF6") {
+        
+        guard let navBar = navigationController?.navigationBar
+            else { fatalError("Navigation controller does not exist!") }
+        
+            guard let colour = UIColor(hexString: hexCode)
+                else { print("Error: the hex code is not exist"); return }
+            
+            let contrastColour = ContrastColorOf(colour, returnFlat: true)
+            
+            if #available(iOS 13.0, *) {
+                let navBarAppearance = UINavigationBarAppearance()
+                
+                navBarAppearance.configureWithOpaqueBackground()
+                navBarAppearance.backgroundColor = colour
+                navBarAppearance.largeTitleTextAttributes =
+                    [NSAttributedString.Key.foregroundColor : contrastColour]
+                
+                navBar.scrollEdgeAppearance = navBarAppearance
+                navBar.standardAppearance = navBarAppearance
+                navBar.tintColor = contrastColour
+                
+            } else {
+                navBar.barTintColor = contrastColour
+                navBar.tintColor = contrastColour
+                navBar.largeTitleTextAttributes =
+                    [NSAttributedString.Key.foregroundColor : contrastColour]
+            }
+    }
+    
+    func setColorForSearchBar(withHexCode hexCode: String = "1D9BF6") {
+        
+        guard let colour = UIColor(hexString: hexCode)
+            else { print("Error: the hex code is not exist"); return }
+        
+        let contrastColour = ContrastColorOf(colour, returnFlat: true)
+        
+        searchBar.searchTextField.backgroundColor = contrastColour
+        searchBar.barTintColor = colour
     }
     
     //MARK: - Table View Datasource methods
@@ -45,8 +110,17 @@ class ToDoListViewController: SwipeTableViewController {
         let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
         if let item = todoItems?[indexPath.row] {
+            
             cell.textLabel?.text = item.title
-            cell.accessoryType = item.done == true ? .checkmark : .none
+            
+                let color = UIColor(hexString: selectedCategory!.hexColor)?.darken(byPercentage:
+                    CGFloat(indexPath.row) / CGFloat(todoItems!.count))
+                
+                cell.backgroundColor = color
+                cell.textLabel?.textColor = UIColor.init(contrastingBlackOrWhiteColorOn: color ?? UIColor.white, isFlat: true)
+                cell.accessoryType = item.done == true ? .checkmark : .none
+            
+            
         } else {
             cell.textLabel?.text = "No Items Added"
         }
@@ -65,18 +139,15 @@ class ToDoListViewController: SwipeTableViewController {
                     
                     //Update item
                     item.done = !item.done
-                    
-                    //Delete item
-//                    realm.delete(item)
                 }
             } catch {
                 print("Error saving done status")
             }
         }
         
-        tableView.reloadData()
-        
         tableView.deselectRow(at: indexPath, animated: true)
+        
+        tableView.reloadData()
     }
     
     //MARK: - Delete Items
@@ -117,6 +188,7 @@ class ToDoListViewController: SwipeTableViewController {
                     
                     do {
                         try self.realm.write {
+                
                             let newItem = Item()
                             newItem.title = textField.text!
                             newItem.dateCreated = Date()
